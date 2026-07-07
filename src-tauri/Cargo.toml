@@ -1,9 +1,14 @@
 [package]
 name = "daraerp"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Desktop business management system built with Tauri 2, React, and SQLite"
+authors = ["Ahmed Wagdy"]
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/ahmed-wagdy/daraerp"
+readme = "../README.md"
+keywords = ["erp", "tauri", "business", "management"]
+categories = ["business-applications"]
 
 [lib]
 name = "daraerp_lib"
@@ -19,3 +24,6 @@ serde_json = "1"
 rusqlite = { version = "0.40", features = ["bundled"] }
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+
+[lints.clippy]
+all = "deny"
