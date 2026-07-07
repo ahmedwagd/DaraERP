@@ -1,0 +1,40 @@
+{
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loggingIn": "Signing in...",
+    "welcome": "Welcome back",
+    "dashboardTitle": "Dashboard",
+    "invalidCredentials": "Invalid email or password",
+    "sessionExpired": "Session expired. Please login again.",
+    "permissionDenied": "You do not have permission to perform this action",
+    "logoutSuccess": "Logged out successfully",
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "products": "Products",
+    "invoices": "Invoices",
+    "settings": "Settings"
+  },
+  "role": {
+    "ADMIN": "Administrator",
+    "MANAGER": "Manager",
+    "USER": "User"
+  }
+}

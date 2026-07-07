@@ -1,3 +1,5 @@
+pub mod auth;
+
 use crate::error::AppError;
 
 #[tauri::command]

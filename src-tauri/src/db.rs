@@ -1,14 +1,9 @@
-use std::sync::Mutex;
 use rusqlite::Connection;
 use tauri::AppHandle;
 use tauri::Manager;
 
 use crate::error::AppError;
-
-pub struct AppState {
-    #[allow(dead_code)]
-    pub db: Mutex<Connection>,
-}
+use crate::seed;
 
 pub fn init_db(app_handle: &AppHandle) -> Result<Connection, AppError> {
     let app_data_dir = app_handle
@@ -24,6 +19,8 @@ pub fn init_db(app_handle: &AppHandle) -> Result<Connection, AppError> {
     conn.execute_batch("PRAGMA journal_mode = WAL;")?;
 
     run_migrations(&conn)?;
+
+    seed::maybe_seed_admin(&conn)?;
 
     Ok(conn)
 }

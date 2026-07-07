@@ -29,6 +29,9 @@ export default [
       ...tsPlugin.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": "warn",
+      // Disabled: TypeScript catches undefined variables; the React JSX transform
+      // does not require importing the React namespace explicitly.
+      "no-undef": "off",
     },
   },
   {
