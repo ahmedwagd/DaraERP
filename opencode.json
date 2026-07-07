@@ -1,5 +1,10 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "speckit": {
+    "project": "DaraERP Tauri Edition — desktop business management system",
+    "tech": "React 19 + Vite + TypeScript (frontend), Rust + Tauri 2 + SQLite (backend)",
+    "blueprint": "Read README.md for full architecture, data model, and command→invoke mapping."
+  },
   "mcp": {
     "chrome-devtools": {
       "type": "local",
