@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
@@ -6,6 +7,7 @@ function Layout() {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [lang, setLang] = useState(i18n.language);
 
   const handleLogout = async () => {
     await logout();
@@ -13,8 +15,9 @@ function Layout() {
   };
 
   const toggleLanguage = () => {
-    const next = i18n.language === "en" ? "ar" : "en";
+    const next = lang === "en" ? "ar" : "en";
     i18n.changeLanguage(next);
+    setLang(next);
   };
 
   if (!user) {
@@ -22,7 +25,7 @@ function Layout() {
   }
 
   return (
-    <div dir={i18n.language === "ar" ? "rtl" : "ltr"}>
+    <div dir={lang === "ar" ? "rtl" : "ltr"}>
       <aside>
         <nav>
           <ul>
@@ -49,7 +52,7 @@ function Layout() {
           {user.name ?? user.email} ({t("role." + user.role)})
         </span>
         <button onClick={toggleLanguage}>
-          {i18n.language === "en" ? t("auth.arabic") : t("auth.english")}
+          {lang === "en" ? t("auth.arabic") : t("auth.english")}
         </button>
         <button onClick={handleLogout}>{t("auth.logout")}</button>
       </header>

@@ -11,6 +11,7 @@ function Login({ onLogin }: LoginProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lang, setLang] = useState(i18n.language);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,12 +41,13 @@ function Login({ onLogin }: LoginProps) {
   };
 
   const toggleLanguage = () => {
-    const next = i18n.language === "en" ? "ar" : "en";
+    const next = lang === "en" ? "ar" : "en";
     i18n.changeLanguage(next);
+    setLang(next);
   };
 
   return (
-    <div dir={i18n.language === "ar" ? "rtl" : "ltr"}>
+    <div dir={lang === "ar" ? "rtl" : "ltr"}>
       <h1>{t("auth.login")}</h1>
       <form onSubmit={handleSubmit}>
         <div>
@@ -76,7 +78,7 @@ function Login({ onLogin }: LoginProps) {
         </button>
       </form>
       <button onClick={toggleLanguage}>
-        {i18n.language === "en" ? t("auth.arabic") : t("auth.english")}
+        {lang === "en" ? t("auth.arabic") : t("auth.english")}
       </button>
     </div>
   );
