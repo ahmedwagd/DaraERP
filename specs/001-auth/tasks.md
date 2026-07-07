@@ -31,9 +31,9 @@ of each story. Foundational phase includes shared infrastructure that blocks all
 
 **Purpose**: Add required Rust and frontend dependencies
 
-- [ ] T001 Add Rust auth dependencies to `src-tauri/Cargo.toml`: argon2, jsonwebtoken, sha2, rand,
+- [x] T001 Add Rust auth dependencies to `src-tauri/Cargo.toml`: argon2, jsonwebtoken, sha2, rand,
       keyring (plus any of uuid, chrono, serde, serde_json not already present)
-- [ ] T002 [P] Install frontend dependencies via `npm install`: react-router, react-i18next, i18next
+- [x] T002 [P] Install frontend dependencies via `npm install`: react-router, react-i18next, i18next
 
 ---
 
@@ -44,17 +44,17 @@ MUST complete before any user story can be implemented.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Create development-only admin account fixture in `src-tauri/src/seed.rs`:
+- [x] T003 Create development-only admin account fixture in `src-tauri/src/seed.rs`:
       - Gated behind `#[cfg(debug_assertions)]` from the start; never runs in production builds.
       - Inserts one ADMIN user with an argon2-hashed password only when the `users` table is empty.
       - Called from `src-tauri/src/db.rs` after migrations when no admin exists and `cfg(debug_assertions)`.
       - Clearly documented as temporary until Feature 002 formalises user creation.
       - Does not implement general user management.
-- [ ] T004 Implement `audit_log()` in `src-tauri/src/audit.rs`:
+- [x] T004 Implement `audit_log()` in `src-tauri/src/audit.rs`:
       - Supports actions: `LOGIN`, `LOGOUT`, `LOGIN_FAILED`, `TOKEN_THEFT_DETECTED`.
       - Accepts user_id, user_email, entity_type, entity_id, optional JSON changes.
       - Returns `AppError` consistent with the error convention; never panics.
-- [ ] T005 [P] Implement auth-related model/query helpers in `src-tauri/src/models/mod.rs`:
+- [x] T005 [P] Implement auth-related model/query helpers in `src-tauri/src/models/mod.rs`:
       - `find_user_by_email(email) -> Result<User, AppError>`
       - `find_user_by_id(id) -> Result<User, AppError>`
       - `insert_refresh_token(user_id, family_id, token_hash, expires_at) -> Result<(), AppError>`
@@ -63,21 +63,21 @@ MUST complete before any user story can be implemented.
       - `revoke_family(family_id) -> Result<(), AppError>`
       - `get_active_family_id(user_id) -> Result<Option<String>, AppError>`
       - All return typed errors; never unwrap.
-- [ ] T006 [P] Implement secure store in `src-tauri/src/auth/secure_store.rs`:
+- [x] T006 [P] Implement secure store in `src-tauri/src/auth/secure_store.rs`:
       - `load_jwt_secret() -> Result<String, AppError>` — generate 256-bit random secret on first
         run and store in keyring; load from keyring on subsequent runs.
       - `get_refresh_token() -> Result<String, AppError>` — read raw renewal credential from keyring.
       - `set_refresh_token(token: &str) -> Result<(), AppError>` — store raw renewal credential in keyring.
       - `clear_refresh_token() -> Result<(), AppError>` — remove renewal credential from keyring.
       - Uses `keyring` crate internally. Never exposes raw secrets to the frontend.
-- [ ] T007 Implement `Session` struct in `src-tauri/src/auth/session.rs`:
+- [x] T007 Implement `Session` struct in `src-tauri/src/auth/session.rs`:
       - Fields: `user_id: String`, `role: String`, `language: String`, `family_id: String`.
       - Update `src-tauri/src/lib.rs` to add `pub session: Mutex<Option<Session>>` and
         `pub jwt_secret: String` fields to `AppState`.
       - Update `src-tauri/src/db.rs` `init_db()` return to propagate `jwt_secret` from secure store
         or load it in `lib.rs` setup and pass to `AppState`.
       - Keep database connection in AppState as established by foundation.
-- [ ] T008 Implement core auth functions in `src-tauri/src/auth/mod.rs`:
+- [x] T008 Implement core auth functions in `src-tauri/src/auth/mod.rs`:
       - `hash_password(password: &str) -> Result<String, AppError>` — argon2id hash.
       - `verify_password(password: &str, hash: &str) -> Result<bool, AppError>` — argon2id verify.
       - `issue_tokens(user_id: &str, role: &str, jwt_secret: &str) -> Result<(String, String, String, DateTime<Utc>), AppError>`
@@ -85,18 +85,19 @@ MUST complete before any user story can be implemented.
         (32-byte random, base64); return (jwt, refresh_token_raw, family_id, refresh_expiry).
       - `verify_jwt(token: &str, jwt_secret: &str) -> Result<Claims, AppError>` — decode and
         validate JWT, return claims (user_id, role, language).
-      - `rotate_refresh_token(conn: &Connection, raw_token: &str, jwt_secret: &str) -> Result<(String, String, String, String, DateTime<Utc>), AppError>`
-        — find token by SHA-256 hash; if not found → return invalid credentials; if found and
-        expired → clear session, return expired error; if found and already revoked (is_revoked=1)
-        → suspect theft: call `revoke_family`, write `TOKEN_THEFT_DETECTED` audit, clear secure
-        store, clear session, return invalid credentials error; if found, active, not expired →
-        revoke this token only, issue new token in same family, return (new_jwt, new_refresh_raw,
-        family_id, user_id, new_refresh_expiry).
+      - `rotate_refresh_token(conn: &mut Connection, raw_token: &str, jwt_secret: &str) -> Result<(String, String, String, String, DateTime<Utc>), AppError>`
+        — find token by SHA-256 hash inside a rusqlite::Transaction; if not found → return
+        AUTH_INVALID_CREDENTIALS; if found and expired → return AUTH_EXPIRED_TOKEN; if found and
+        already revoked (is_revoked=1) → theft: revoke_family + TOKEN_THEFT_DETECTED audit inside
+        transaction, then commit and return AUTH_INVALID_CREDENTIALS. Keychain cleanup handled
+        by command layer. If found, active, not expired → revoke this token, issue new token in
+        same family — all inside the transaction. Returns (new_jwt, new_refresh_raw, family_id,
+        user_id, new_refresh_expiry).
       - `revoke_family_by_user(conn: &Connection, family_id: &str) -> Result<(), AppError>`
         — revoke all tokens in family.
       - `guard_role(user_role: &str, allowed_roles: &[&str]) -> Result<(), AppError>`
         — return `PERMISSION_DENIED` if role not in allowed set.
-- [ ] T009 [P] Set up i18n in `src/i18n/index.ts` with `i18next` and `react-i18next`, configure
+- [x] T009 [P] Set up i18n in `src/i18n/index.ts` with `i18next` and `react-i18next`, configure
       `en` and `ar` namespaces with auth translations in `src/i18n/en.json` and `src/i18n/ar.json`
 
 **Checkpoint**: Foundation ready — `audit_log()` works, model queries work, secure store works,
@@ -113,7 +114,7 @@ selector works; audit events are written.
 **Independent Test**: Open app → see login form → enter valid credentials → dashboard loads.
 Enter invalid credentials → error stays on login screen.
 
-- [ ] T010 [US1] Implement `login` Tauri command in `src-tauri/src/commands/auth.rs`:
+- [x] T010 [US1] Implement `login` Tauri command in `src-tauri/src/commands/auth.rs`:
       - Validate email format and password non-empty.
       - `find_user_by_email` — if not found, return `AUTH_INVALID_CREDENTIALS`, write `LOGIN_FAILED` audit.
       - `verify_password` — if fails, return `AUTH_INVALID_CREDENTIALS`, write `LOGIN_FAILED` audit.
@@ -123,13 +124,13 @@ Enter invalid credentials → error stays on login screen.
       - Set `AppState.session = Some(Session { user_id, role, language, family_id })`.
       - Write `LOGIN` audit event.
       - Return `{ id, name, email, role, language }` (never password_hash or raw tokens).
-- [ ] T011 [US1] Register `commands::auth` module and `login` command in `src-tauri/src/lib.rs`
+- [x] T011 [US1] Register `commands::auth` module and `login` command in `src-tauri/src/lib.rs`
       `generate_handler![]`
-- [ ] T012 [US1] Create `src/services/auth.ts` with typed `login(email, password) -> User`
+- [x] T012 [US1] Create `src/services/auth.ts` with typed `login(email, password) -> User`
       function using `invokeCommand` wrapper — define TypeScript `User` and response types
-- [ ] T013 [US1] Create `src/pages/Login.tsx` with email/password form, language selector,
+- [x] T013 [US1] Create `src/pages/Login.tsx` with email/password form, language selector,
       validation feedback, i18n bindings, and error display
-- [ ] T014 [US1] Create `src/contexts/AuthContext.tsx` with user state, `login()` function that
+- [x] T014 [US1] Create `src/contexts/AuthContext.tsx` with user state, `login()` function that
       calls `src/services/auth.ts`, language preference, and provides `user` and `login` to children
 
 **Checkpoint**: User Story 1 complete — login works end-to-end, invalid credentials show safe
@@ -146,35 +147,37 @@ silently restores session without login screen. Logout works as safe workflow.
 dashboard loads without login form. Click logout → login screen appears → reopen → login
 screen appears.
 
-- [ ] T015 [US2] Implement `refresh_session` Tauri command in `src-tauri/src/commands/auth.rs`:
+- [x] T015 [US2] Implement `refresh_session` Tauri command in `src-tauri/src/commands/auth.rs`:
       - `get_refresh_token` from secure store; if absent → return `AUTH_INVALID_CREDENTIALS`.
       - `rotate_refresh_token` — handles theft detection, expiry, rotation internally (see T008).
       - On success: `set_refresh_token` with new raw token, update `AppState.session`, return user info.
       - On theft detected: `clear_refresh_token`, clear `AppState.session`, return `AUTH_INVALID_CREDENTIALS`.
-- [ ] T016 [US2] Implement `get_current_user` Tauri command in `src-tauri/src/commands/auth.rs`:
+      - Auth errors (AUTH_INVALID_CREDENTIALS, AUTH_EXPIRED_TOKEN) clear keychain + session.
+      - DB/internal errors propagate as-is without destroying session.
+- [x] T016 [US2] Implement `get_current_user` Tauri command in `src-tauri/src/commands/auth.rs`:
       - Read `AppState.session`. If `None` → return null.
       - `find_user_by_id(session.user_id)`. If not found → return null.
       - Return `{ id, name, email, role, language }`.
-- [ ] T017 [US2] Implement `logout` Tauri command in `src-tauri/src/commands/auth.rs`:
-      - Read `family_id` from `AppState.session`. If `None` → already logged out, return null.
+- [x] T017 [US2] Implement `logout` Tauri command in `src-tauri/src/commands/auth.rs`:
+      - Capture user_id + family_id from session, then immediately clear in-memory session.
+      - Look up user email from DB.
       - `revoke_family_by_user(family_id)` in DB.
+      - Write `LOGOUT` audit event with captured identity.
       - `clear_refresh_token` from secure store.
-      - Clear `AppState.session` to `None`.
-      - Write `LOGOUT` audit event.
-      - If any step fails: still clear in-memory session; return a safe error; do not leave the
-        UI showing a valid logged-in state. Log the error server-side.
-- [ ] T018 [US2] Register `refresh_session`, `get_current_user`, `logout` in
+      - If any step fails: session already cleared so UI shows logged out state.
+        Return a safe error.
+- [x] T018 [US2] Register `refresh_session`, `get_current_user`, `logout` in
       `src-tauri/src/lib.rs` `generate_handler![]`
-- [ ] T019 [US2] Add `refreshSession()`, `getCurrentUser()`, `logout()` to `src/services/auth.ts`
-- [ ] T020 [US2] Create `src/components/Layout.tsx` with sidebar navigation (role-filtered),
+- [x] T019 [US2] Add `refreshSession()`, `getCurrentUser()`, `logout()` to `src/services/auth.ts`
+- [x] T020 [US2] Create `src/components/Layout.tsx` with sidebar navigation (role-filtered),
       header showing user name/role/language, and main content outlet
-- [ ] T021 [US2] Create `src/components/ProtectedRoute.tsx` that redirects to login when no
+- [x] T021 [US2] Create `src/components/ProtectedRoute.tsx` that redirects to login when no
       valid session exists
-- [ ] T022 [US2] Create `src/pages/Dashboard.tsx` placeholder protected page with welcome message
+- [x] T022 [US2] Create `src/pages/Dashboard.tsx` placeholder protected page with welcome message
       and role badge
-- [ ] T023 [US2] Update `src/App.tsx` with `AuthProvider`, router configuration (login route,
+- [x] T023 [US2] Update `src/App.tsx` with `AuthProvider`, router configuration (login route,
       protected routes), and auth-check redirect logic
-- [ ] T024 [US2] Update `AuthContext` in `src/contexts/AuthContext.tsx` to call `refresh_session`
+- [x] T024 [US2] Update `AuthContext` in `src/contexts/AuthContext.tsx` to call `refresh_session`
       on app mount for silent session restore
 
 **Checkpoint**: User Stories 1 AND 2 complete — login, protected layout, silent session
@@ -190,15 +193,16 @@ invalidated credential revokes the entire credential family.
 **Independent Test**: Log in → capture refresh token → refresh session (rotation occurs) →
 use old captured token → entire family revoked, user forced to re-login.
 
-- [ ] T025 [US3] Verify and test theft detection path in `rotate_refresh_token` in
+- [x] T025 [US3] Verify and test theft detection path in `rotate_refresh_token` in
       `src-tauri/src/auth/mod.rs` (logic was implemented in T008; this task validates the
       correct behavior):
       - A presented renewal credential whose hash is found in the DB with `is_revoked=1`
-        triggers full family revocation, secure store clear, session clear, and
-        `TOKEN_THEFT_DETECTED` audit event.
+        triggers full family revocation inside a transaction, `TOKEN_THEFT_DETECTED` audit
+        event inside the transaction, then commit and return AUTH_INVALID_CREDENTIALS.
+        Keychain clear and session clear handled by the command layer.
       - A presented renewal credential whose hash is NOT found returns `AUTH_INVALID_CREDENTIALS`.
       - A presented renewal credential found, active, and not expired performs normal rotation
-        (revoke old, issue new in same family).
+        (revoke old, issue new in same family) inside a single transaction.
 - [ ] T026 [US3] End-to-end verification: run through quickstart scenario 9 (theft detection)
       as manual validation
 
@@ -214,7 +218,7 @@ role-appropriate navigation. Document role policy for future feature commands.
 **Independent Test**: Log in as USER → attempt an ADMIN-only auth operation →
 PERMISSION_DENIED error. Log in as ADMIN → same operation succeeds.
 
-- [ ] T027 [US4] Apply `guard_role` to auth commands where meaningful in
+- [x] T027 [US4] Apply `guard_role` to auth commands where meaningful in
       `src-tauri/src/commands/auth.rs`:
       - If Feature 001 has any admin-only auth operations, apply the guard.
       - If all auth operations are multi-role, document that guard is available but no auth
@@ -228,10 +232,10 @@ PERMISSION_DENIED error. Log in as ADMIN → same operation succeeds.
         //   USER   → read-only
         ```
       - Do not create fake business commands to demonstrate role enforcement.
-- [ ] T028 [US4] Add role-based navigation filtering in `src/components/Layout.tsx`:
+- [x] T028 [US4] Add role-based navigation filtering in `src/components/Layout.tsx`:
       show/hide sidebar nav items based on role. Planned sections may appear as disabled
       placeholders but must not imply unimplemented features exist.
-- [ ] T029 [US4] Add role badge display in `src/pages/Dashboard.tsx` and user header in
+- [x] T029 [US4] Add role badge display in `src/pages/Dashboard.tsx` and user header in
       `src/components/Layout.tsx`
 
 **Checkpoint**: All user stories complete — role-based access enforced at backend and
@@ -243,14 +247,14 @@ reflected in UI navigation. Role policy documented for future features.
 
 **Purpose**: Final integration, validation, and cleanup
 
-- [ ] T030 Run `npx tsc --noEmit` and fix all TypeScript errors
-- [ ] T031 Run `npm run lint` and fix all lint errors
-- [ ] T032 Run `cd src-tauri && cargo check` and fix all Rust errors
-- [ ] T033 Run `cd src-tauri && cargo clippy -- -D warnings` and fix all clippy warnings and
+- [x] T030 Run `npx tsc --noEmit` and fix all TypeScript errors
+- [x] T031 Run `npm run lint` and fix all lint errors
+- [x] T032 Run `cd src-tauri && cargo check` and fix all Rust errors
+- [x] T033 Run `cd src-tauri && cargo clippy -- -D warnings` and fix all clippy warnings and
       deny-level lint violations
-- [ ] T034 Verify that the development-only admin seed in `src-tauri/src/seed.rs` is correctly
+- [x] T034 Verify that the development-only admin seed in `src-tauri/src/seed.rs` is correctly
       gated behind `#[cfg(debug_assertions)]`. Verify no default password, hard-coded credential,
-      or dev admin path is active in production builds
+      or dev admin path is active in production builds. Password removed from log output.
 - [ ] T035 Run quickstart.md validation scenarios manually:
       - Login with valid credentials (scenario 2)
       - Login with invalid credentials (scenario 3)
@@ -369,3 +373,7 @@ T014 - contexts/AuthContext.tsx
   only if that specific old token is presented again
 - Role authorization for Customer/Invoice/Product/Settings commands is deferred to those
   feature implementations
+- Review fix pass applied (10 issues): DB transaction wrapping, safe `.unwrap()` removal,
+  keychain cleanup moved to command layer, `&mut Connection` for transaction support,
+  correct `Link` navigation, password removed from seed log, whitespace validation,
+  logout audit identity capture, `no-undef` rationale documented
