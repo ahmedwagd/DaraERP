@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -9,7 +9,14 @@ import "./App.css";
 
 function LoginWrapper() {
   const { login } = useAuth();
-  return <Login onLogin={login} />;
+  const navigate = useNavigate();
+
+  const handleLogin = async (email: string, password: string) => {
+    await login(email, password);
+    navigate("/dashboard", { replace: true });
+  };
+
+  return <Login onLogin={handleLogin} />;
 }
 
 function RootRedirect() {
