@@ -8,6 +8,10 @@ pub mod actions {
     pub const LOGOUT: &str = "LOGOUT";
     pub const LOGIN_FAILED: &str = "LOGIN_FAILED";
     pub const TOKEN_THEFT_DETECTED: &str = "TOKEN_THEFT_DETECTED";
+    pub const USER_CREATED: &str = "USER_CREATED";
+    pub const USER_UPDATED: &str = "USER_UPDATED";
+    pub const USER_ACTIVATED: &str = "USER_ACTIVATED";
+    pub const USER_DEACTIVATED: &str = "USER_DEACTIVATED";
 }
 
 /// Writes an audit log entry.
