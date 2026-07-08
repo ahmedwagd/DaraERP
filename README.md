@@ -15,7 +15,7 @@ The product scope is focused on small and medium steel trading operations:
 - Arabic/English UI support
 - printable invoices and operational reports
 
-> **Current status:** foundation/scaffold stage. The architecture is defined, but business features are not fully implemented yet. Backend work currently includes the Tauri shell, database bootstrap, versioned migration runner, base error type, authentication/session groundwork, seed support, and module placeholders. Frontend work is still early and should be treated as incomplete unless the current code proves otherwise.
+> **Current status:** foundation/scaffold stage. The architecture is defined, but business features are not fully implemented yet. Backend work currently includes the Tauri shell, database bootstrap, versioned migration runner, base error type, authentication/session (login, logout, JWT, refresh rotation, role guard), user management CRUD, audit logging, seed support, and module scaffolding. Frontend work is still early and should be treated as incomplete unless the current code proves otherwise.
 
 ---
 
@@ -27,19 +27,20 @@ The product scope is focused on small and medium steel trading operations:
 - `src-tauri/src/error.rs`: AppError and conversion helpers.
 - `src-tauri/src/lib.rs`: Tauri builder and AppState registration.
 - `src-tauri/migrations/001_init.sql`: initial SQLite schema with integer minor units for money and `schema_migrations`.
+- `src-tauri/src/auth/`: authentication module — login, logout, JWT issue/verify, refresh token rotation, role guard.
+- `src-tauri/src/commands/`: Tauri command modules for auth and user management.
+- `src-tauri/src/models/mod.rs`: User and RefreshToken models with CRUD query helpers.
+- `src-tauri/src/audit.rs`: audit log writer with action constants.
+- `src/services/users.ts`: typed frontend invoke wrappers for user management.
 - `package.json`: basic Vite/Tauri scripts, including `lint`.
 - `src-tauri/tauri.conf.json`: CSP is defined and must not be relaxed without justification.
 
 ### Scaffolded / Incomplete
 
-- `auth/`
-- `commands/`
-- `models/`
-- `audit.rs`
 - `pdf.rs`
 - `seed.rs`
 - `notifications_engine.rs`
-- Frontend feature pages and service wrappers
+- Frontend feature pages (no UI yet, only services)
 
 ### Important Gap
 
@@ -578,8 +579,8 @@ This project is a Tauri desktop migration of a previous NestJS/Prisma system, bu
 
 | Business Area | New Tauri/Rust Area | Frontend Area | Status |
 |---|---|---|---|
-| Auth/session | `src-tauri/src/auth/`, `src-tauri/src/commands/auth.rs` | `src/features/auth/` | Started/Planned |
-| Users/roles | `models/user.rs`, `commands/users.rs` | `src/features/settings/users/` | Planned |
+| Auth/session | `src-tauri/src/auth/`, `src-tauri/src/commands/auth.rs` | `src/features/auth/` | Implemented |
+| Users/roles | `src-tauri/src/models/mod.rs`, `commands/users.rs` | `src/features/settings/users/` | Implemented |
 | Customers | `commands/customers.rs` | `src/features/customers/` | Planned |
 | Suppliers | `commands/suppliers.rs` | `src/features/suppliers/` | Planned |
 | Categories/products/units | `commands/products.rs`, `commands/categories.rs` | `src/features/products/` | Planned |

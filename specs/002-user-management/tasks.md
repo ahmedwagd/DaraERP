@@ -33,11 +33,11 @@ description: "Task list for 002-user-management: User Management"
 
 **⚠️ CRITICAL**: No command work can begin until this phase is complete.
 
-- [ ] T001 Add audit action constants to `src-tauri/src/audit.rs`:
+- [x] T001 Add audit action constants to `src-tauri/src/audit.rs`:
       - `USER_CREATED`, `USER_UPDATED`, `USER_ACTIVATED`, `USER_DEACTIVATED`.
       - Add them inside the existing `pub mod actions` block.
       - These are `pub const &str` values matching the existing pattern (LOGIN, LOGOUT, etc.).
-- [ ] T002 [P] Implement user CRUD query helpers in `src-tauri/src/models/mod.rs`:
+- [x] T002 [P] Implement user CRUD query helpers in `src-tauri/src/models/mod.rs`:
       - `insert_user(conn, id, email, name, password_hash, role, language) -> Result<User, AppError>`
         — insert row, then SELECT the newly inserted user by ID and return it.
         Map SQLite ConstraintViolation to `CONFLICT` error.
@@ -74,7 +74,7 @@ ADMIN (→ `PERMISSION_DENIED`), and returns the acting admin's `user_id`. It mu
 lock before returning. Each mutation command (create, update, set_active) must then look up the
 acting admin user by ID inside the DB transaction before writing audit events.
 
-- [ ] T003 [US1] Create `src-tauri/src/commands/users.rs` with `UserResponse` DTO and `require_admin`
+- [x] T003 [US1] Create `src-tauri/src/commands/users.rs` with `UserResponse` DTO and `require_admin`
       helper function:
       - `UserResponse` fields: `id`, `email`, `name`, `role`, `language`, `is_active`,
         `created_at`, `updated_at`. Never includes `password_hash`.
@@ -85,7 +85,7 @@ acting admin user by ID inside the DB transaction before writing audit events.
         command must call `models::find_user_by_id` inside the DB transaction to derive the acting
         admin's email before writing audit. Audit events must include acting admin ID, acting admin
         email, target user ID, action, and safe changes JSON. Never include passwords or hashes.
-- [ ] T004 [US1] Implement `create_user` command in `src-tauri/src/commands/users.rs`:
+- [x] T004 [US1] Implement `create_user` command in `src-tauri/src/commands/users.rs`:
       - Input: `email: String`, `name: String`, `password: String`, `role: String`, `language: String`.
       - Validate: email contains `@` and `.`; name non-empty after trim; password non-empty;
         role ∈ `{ADMIN, MANAGER, USER}`; language ∈ `{en, ar}`.
@@ -101,8 +101,8 @@ acting admin user by ID inside the DB transaction before writing audit events.
         with email and role.
       - Commit transaction.
       - Convert returned `User` to `UserResponse` and return.
-- [ ] T005 [US1] Add `pub mod users;` to `src-tauri/src/commands/mod.rs`
-- [ ] T006 [US1] Register `create_user` in `src-tauri/src/lib.rs` `generate_handler![]`
+- [x] T005 [US1] Add `pub mod users;` to `src-tauri/src/commands/mod.rs`
+- [x] T006 [US1] Register `create_user` in `src-tauri/src/lib.rs` `generate_handler![]`
 
 **Checkpoint**: `create_user` works — valid users created, duplicate email returns `CONFLICT`,
 invalid input returns `VALIDATION_ERROR`, non-ADMIN returns `PERMISSION_DENIED`.
@@ -113,7 +113,7 @@ invalid input returns `VALIDATION_ERROR`, non-ADMIN returns `PERMISSION_DENIED`.
 
 **Goal**: ADMIN lists users with optional filters and fetches a single user by ID.
 
-- [ ] T007 [US2] Implement `list_users` command in `src-tauri/src/commands/users.rs`:
+- [x] T007 [US2] Implement `list_users` command in `src-tauri/src/commands/users.rs`:
       - Input: `role: Option<String>`, `is_active: Option<bool>`.
       - Call `require_admin`. Release session lock.
       - Validate role filter if provided: must be one of `ADMIN`, `MANAGER`, `USER`.
@@ -122,13 +122,13 @@ invalid input returns `VALIDATION_ERROR`, non-ADMIN returns `PERMISSION_DENIED`.
       - Call `models::list_users(&db, role_filter, is_active)`.
       - Map results to `Vec<UserResponse>` (without `password_hash`).
       - Valid filters matching no users return an empty list (not an error).
-- [ ] T008 [US2] Implement `get_user` command in `src-tauri/src/commands/users.rs`:
+- [x] T008 [US2] Implement `get_user` command in `src-tauri/src/commands/users.rs`:
       - Input: `id: String`.
       - Call `require_admin`. Release session lock.
       - Lock DB. Call `models::find_user_by_id`.
       - Map to `UserResponse` with `created_at`/`updated_at` from DB.
       - Missing user → `NOT_FOUND`.
-- [ ] T009 [US2] Register `list_users` and `get_user` in `src-tauri/src/lib.rs`
+- [x] T009 [US2] Register `list_users` and `get_user` in `src-tauri/src/lib.rs`
 
 **Checkpoint**: `list_users` and `get_user` work — role filter, active filter, missing user handling.
 
@@ -140,7 +140,7 @@ invalid input returns `VALIDATION_ERROR`, non-ADMIN returns `PERMISSION_DENIED`.
 is never modified. Last active ADMIN cannot be demoted. All optional fields being `None` →
 `VALIDATION_ERROR`.
 
-- [ ] T010 [US3] Implement `update_user` command in `src-tauri/src/commands/users.rs`:
+- [x] T010 [US3] Implement `update_user` command in `src-tauri/src/commands/users.rs`:
       - Input: `id: String`, `email: Option<String>`, `name: Option<String>`,
         `role: Option<String>`, `language: Option<String>`.
       - Call `require_admin` → get `acting_user_id`. Session lock released.
@@ -161,7 +161,7 @@ is never modified. Last active ADMIN cannot be demoted. All optional fields bein
         `"email": "<updated>"`, `"role": "{new_role}"`; never include passwords or hashes).
       - Commit transaction.
       - Convert returned `User` to `UserResponse` and return.
-- [ ] T011 [US3] Register `update_user` in `src-tauri/src/lib.rs`
+- [x] T011 [US3] Register `update_user` in `src-tauri/src/lib.rs`
 
 **Checkpoint**: Partial updates work, no-op update returns `VALIDATION_ERROR`, last-admin demotion
 blocked, `is_active` unchanged.
@@ -173,7 +173,7 @@ blocked, `is_active` unchanged.
 **Goal**: ADMIN toggles `is_active`. Deactivation revokes all refresh tokens in the same transaction.
 Self-deactivation and last-admin deactivation are blocked.
 
-- [ ] T012 [US4] Implement `set_user_active` command in `src-tauri/src/commands/users.rs`:
+- [x] T012 [US4] Implement `set_user_active` command in `src-tauri/src/commands/users.rs`:
       - Input: `id: String`, `is_active: bool`.
       - Call `require_admin` → get `acting_user_id`. Session lock released.
       - **Self-deactivation guard**: if `id == acting_user_id` AND `is_active == false` →
@@ -195,7 +195,7 @@ Self-deactivation and last-admin deactivation are blocked.
         - Write `USER_ACTIVATED` audit with same structure.
       - Commit transaction.
       - Convert returned `User` to `UserResponse` and return.
-- [ ] T013 [US4] Register `set_user_active` in `src-tauri/src/lib.rs`
+- [x] T013 [US4] Register `set_user_active` in `src-tauri/src/lib.rs`
 
 **Checkpoint**: Activation/deactivation works, self-deactivation blocked, last-admin deactivation
 blocked, refresh tokens revoked on deactivation, correct audit events.
@@ -206,7 +206,7 @@ blocked, refresh tokens revoked on deactivation, correct audit events.
 
 **Purpose**: Typed invoke wrappers for the frontend. No UI pages.
 
-- [ ] T014 Create `src/services/users.ts` with typed service functions:
+- [x] T014 Create `src/services/users.ts` with typed service functions:
       - `createUser(email, name, password, role, language) -> Promise<UserResponse>`
       - `listUsers(role?, isActive?) -> Promise<UserResponse[]>`
       - `getUser(id) -> Promise<UserResponse>`
